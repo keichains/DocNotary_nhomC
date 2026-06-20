@@ -1,0 +1,50 @@
+node_modules/
+certichain-frontend/node_modules/
+
+.env
+.env.local
+*.env
+
+cache/
+artifacts/
+
+dist/
+build/
+.DS_Store
+merkle_tree/benchmark/
+
+# ==== Secrets / Environment ====
+.env
+.env.local
+.env.*.local
+backend_api/.env
+
+# ==== Python ====
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+*.egg-info/
+
+# ==== Node / Frontend ====
+node_modules/
+dist/
+build/
+.vite/
+
+# ==== Hardhat ====
+artifacts/
+cache/
+typechain/
+typechain-types/
+
+# ==== Editor / OS ====
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ==== Logs ====
+*.log
+npm-debug.log*
