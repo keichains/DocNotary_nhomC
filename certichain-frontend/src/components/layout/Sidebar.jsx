@@ -13,27 +13,31 @@ import {
   ServerCog,
   Menu,
   X,
+  FileCheck,
+  RefreshCw,
 } from 'lucide-react';
 import { useState } from 'react';
 
 const navItems = [
   { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/issue', label: 'Issue Certificate', icon: FilePlus },
+  { path: '/issue', label: 'Issue Certificate', icon: FilePlus, adminOnly: true },
   { path: '/certificates', label: 'Certificates', icon: FileText },
   { path: '/my-certificates', label: 'My Certificates', icon: FolderOpen },
   { path: '/verify', label: 'Verify Certificate', icon: ShieldCheck },
+  { path: '/notarize', label: 'Document Notary', icon: FileCheck, adminOnly: true },
   { path: '/transactions', label: 'Transaction Log', icon: History },
-  { path: '/backend-lab', label: 'Backend Lab', icon: ServerCog },
-  { path: '/issuers', label: 'Issuer Management', icon: Users },
+  { path: '/verify-batch', label: 'Verify Batch', icon: ShieldCheck },
+  { path: '/issuers', label: 'Issuer Management', icon: Users, adminOnly: true },
+  { path: '/reissue', label: 'Reissue Certificate', icon: RefreshCw, adminOnly: true },
   { path: '/demo', label: 'Demo Flow', icon: PlayCircle },
 ];
 
 export function Sidebar() {
   const { pathname } = useLocation();
-  const { account } = useWeb3();
+  const { account, isAdmin } = useWeb3();
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const filteredItems = navItems;
+  const filteredItems = navItems.filter((item) => !item.adminOnly || isAdmin);
 
   const SidebarContent = () => (
     <>

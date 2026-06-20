@@ -1,12 +1,15 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useWeb3 } from '../context/Web3Context';
 import { useTransactions } from '../context/TransactionContext';
 import toast from 'react-hot-toast';
 
 export function useCertificates() {
   const { contract, account } = useWeb3();
+  
+
   const { addTransaction, updateTransaction } = useTransactions();
   const [isLoading, setIsLoading] = useState(false);
+  const [certificates, setCertificates] = useState([]);
 
   // Issue a new certificate
   const issueCertificate = useCallback(async (data) => {
@@ -30,8 +33,10 @@ export function useCertificates() {
         data.certType,
         data.documentHash,
         data.metadataHash,
+        data.merkleRoot,
         data.recipient,
-        data.expiresAt
+        data.expiresAt,
+        data.ipfsCID || ''
       );
 
       updateTransaction(txRecord.id, {
@@ -58,6 +63,9 @@ export function useCertificates() {
         certId: data.certId,
       };
     } catch (error) {
+      console.error('Issue certificate error FULL:', error);
+      console.error('Error reason:', error?.reason);
+      console.error('Error data:', error?.data);
       console.error('Issue certificate error:', error);
       updateTransaction(txRecord.id, {
         status: 'failed',
@@ -148,19 +156,58 @@ export function useCertificates() {
         certType: cert.certType,
         documentHash: cert.documentHash,
         metadataHash: cert.metadataHash,
+        merkleRoot: cert.merkleRoot,
         issuer: cert.issuer,
         recipient: cert.recipient,
         issuedAt: cert.issuedAt,
         expiresAt: cert.expiresAt,
         status: Number(cert.status),
         revokedReason: cert.revokedReason,
+        ipfsCID: cert.ipfsCID || '',
       };
     } catch (error) {
       console.error('Get certificate error:', error);
       return null;
     }
   }, [contract]);
+  const loadAllCertificates = useCallback(async () => {
+    if (!contract) return;
+    setIsLoading(true);
+    try {
+      const ids = await contract.getAllCertificateIds();
+      const statusLabels = ['Valid', 'Revoked', 'Expired'];
 
+      const certs = await Promise.all(
+        ids.map(async (id) => {
+          const cert = await contract.getCertificate(id);
+          return {
+            certId:        cert.certId,
+            certName:      cert.certName,
+            certType:      cert.certType,
+            documentHash:  cert.documentHash,
+            metadataHash:  cert.metadataHash,
+            issuer:        cert.issuer,
+            recipient:     cert.recipient,
+            issuedAt:      Number(cert.issuedAt),
+            expiresAt:     Number(cert.expiresAt),
+            status:        Number(cert.status),
+            statusLabel:   statusLabels[Number(cert.status)] || 'Unknown',
+            revokedReason: cert.revokedReason,
+            ipfsCID:       cert.ipfsCID || '',
+          };
+        })
+      );
+      setCertificates(certs);
+    } catch (error) {
+      console.error('Load all certificates error:', error);
+      setCertificates([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [contract]);
+  useEffect(() => {
+    loadAllCertificates();
+  }, [loadAllCertificates]);
   // Verify certificate
   const verifyCertificate = useCallback(async (certId, documentHash = null) => {
     if (!contract) return null;
@@ -177,6 +224,7 @@ export function useCertificates() {
         recipient: result.recipient,
         issuedAt: result.issuedAt,
         expiresAt: result.expiresAt,
+        merkleRoot: result.merkleRoot
       };
     } catch (error) {
       console.error('Verify certificate error:', error);
@@ -246,6 +294,8 @@ export function useCertificates() {
   }, [contract]);
 
   return {
+    certificates,        
+    loadAllCertificates, 
     isLoading,
     issueCertificate,
     revokeCertificate,
